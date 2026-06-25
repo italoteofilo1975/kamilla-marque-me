@@ -17,6 +17,16 @@ conexão e lê os dados — sem busca web genérica e sem fontes que exijam toke
 | **IBGE — SIDRA (Agregados)** | `.../api/v3/agregados` | Indicadores estatísticos por município/UF, incluindo **educação** (taxa de alfabetização, nível de instrução, anos de estudo) do Censo Demográfico e da PNAD Contínua |
 | **dados.gov.br** | CKAN (`/api/3/action/package_search`) | Catálogo oficial de dados abertos: bases do **INEP** (Censo Escolar, IDEB), **FNDE** e redes estaduais/municipais, com os arquivos (CSV/JSON) |
 
+### Fontes secundárias (contexto, não oficiais)
+
+| Fonte | API/acesso | Conteúdo |
+|---|---|---|
+| **Wikipédia** | API MediaWiki (`/w/api.php`) | Contexto e descrições (ferramenta `wikipedia`) |
+| **Páginas HTML** | leitura HTTPS com remoção de HTML | Outras fontes relevantes sem API (ferramenta `ler_pagina`, com bloqueio de endereços internos) |
+
+O agente prioriza sempre os **números oficiais** (IBGE, dados.gov.br) e deixa explícito
+quando uma informação vem de fonte secundária.
+
 ## Como funciona
 
 ```
@@ -27,7 +37,9 @@ Navegador (app.html) → /api/chat (serverless) → Claude (loop agêntico) ─�
                                                                           ├─ metadados_agregado   → IBGE/SIDRA (variáveis, períodos, níveis)
                                                                           ├─ consultar_sidra      → IBGE/SIDRA (valores do indicador)
                                                                           ├─ buscar_dados_abertos → dados.gov.br (catálogo)
-                                                                          └─ ler_recurso          → baixa e lê o CSV/JSON oficial (*.gov.br)
+                                                                          ├─ ler_recurso          → baixa e lê o CSV/JSON oficial (*.gov.br)
+                                                                          ├─ wikipedia            → API MediaWiki (contexto, secundária)
+                                                                          └─ ler_pagina           → lê páginas HTML relevantes (contexto, secundária)
 ```
 
 Fluxos típicos do agente:
