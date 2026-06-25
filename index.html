@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agente de Educação Pública — Dados das redes municipais e estaduais</title>
+  <meta name="description" content="Agente de IA conversacional para consultar dados públicos de educação (IDEB, Censo Escolar, matrículas, FNDE) de todos os municípios e estados do Brasil." />
+  <style>
+    :root {
+      --azul: #0b3d91;
+      --azul-claro: #1565c0;
+      --verde: #1e8e3e;
+      --tinta: #14213d;
+      --fundo: #f4f6fb;
+      --cartao: #ffffff;
+      --borda: #e2e8f0;
+      --cinza: #5b6473;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: var(--tinta);
+      background: var(--fundo);
+      line-height: 1.6;
+    }
+    .container { max-width: 1040px; margin: 0 auto; padding: 0 24px; }
+
+    header.hero {
+      background: linear-gradient(135deg, var(--azul) 0%, var(--azul-claro) 100%);
+      color: #fff;
+      padding: 88px 0 96px;
+    }
+    .hero h1 { font-size: 2.6rem; line-height: 1.15; margin-bottom: 18px; font-weight: 800; }
+    .hero p.lead { font-size: 1.2rem; max-width: 720px; opacity: 0.95; }
+    .badge {
+      display: inline-block; background: rgba(255,255,255,0.16);
+      padding: 6px 14px; border-radius: 999px; font-size: 0.85rem;
+      font-weight: 600; margin-bottom: 22px; letter-spacing: 0.3px;
+    }
+    .cta {
+      display: inline-flex; align-items: center; gap: 8px;
+      margin-top: 32px; background: #fff; color: var(--azul);
+      padding: 15px 30px; border-radius: 12px; font-weight: 700;
+      text-decoration: none; font-size: 1.05rem;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.18); transition: transform .15s ease;
+    }
+    .cta:hover { transform: translateY(-2px); }
+
+    section { padding: 72px 0; }
+    h2 { font-size: 1.8rem; margin-bottom: 12px; color: var(--azul); }
+    .sub { color: var(--cinza); margin-bottom: 40px; max-width: 680px; }
+
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; }
+    .card {
+      background: var(--cartao); border: 1px solid var(--borda);
+      border-radius: 14px; padding: 26px; transition: box-shadow .2s ease;
+    }
+    .card:hover { box-shadow: 0 10px 30px rgba(11,61,145,0.08); }
+    .card h3 { font-size: 1.1rem; margin-bottom: 8px; color: var(--tinta); }
+    .card p { color: var(--cinza); font-size: 0.96rem; }
+    .card .ico { font-size: 1.7rem; margin-bottom: 12px; display: block; }
+
+    .fontes { background: var(--cartao); border-top: 1px solid var(--borda); }
+    .fontes-list { display: flex; flex-wrap: wrap; gap: 12px; }
+    .pill {
+      background: var(--fundo); border: 1px solid var(--borda);
+      padding: 8px 16px; border-radius: 999px; font-weight: 600;
+      font-size: 0.92rem; color: var(--azul);
+    }
+    .exemplos li { margin-bottom: 10px; color: var(--cinza); }
+    .exemplos b { color: var(--tinta); }
+
+    footer {
+      background: var(--tinta); color: #cbd5e1;
+      padding: 36px 0; font-size: 0.9rem; text-align: center;
+    }
+    footer a { color: #93c5fd; text-decoration: none; }
+    .aviso {
+      background: #fff7ed; border: 1px solid #fed7aa; color: #9a3412;
+      padding: 14px 18px; border-radius: 10px; font-size: 0.9rem; margin-top: 28px;
+    }
+    @media (max-width: 640px) { .hero h1 { font-size: 2rem; } section { padding: 48px 0; } }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="container">
+      <span class="badge">Dados abertos · Redes municipais e estaduais</span>
+      <h1>Agente de Educação Pública</h1>
+      <p class="lead">
+        Um assistente de IA conversacional para consultar dados públicos de educação —
+        Censo Escolar, IDEB, matrículas, escolas, docentes e repasses — de qualquer
+        município ou estado do Brasil, conectado direto às APIs públicas e oficiais
+        do <strong>IBGE</strong> e do <strong>dados.gov.br</strong>.
+      </p>
+      <a class="cta" href="/app">Abrir o agente &rarr;</a>
+    </div>
+  </header>
+
+  <section>
+    <div class="container">
+      <h2>O que o agente faz</h2>
+      <p class="sub">Pergunte em linguagem natural; ele consulta as bases públicas e responde com a fonte e o ano.</p>
+      <div class="grid">
+        <div class="card">
+          <span class="ico">📊</span>
+          <h3>Indicadores de qualidade</h3>
+          <p>IDEB, SAEB e ENEM por município, estado ou rede, com o ano de referência.</p>
+        </div>
+        <div class="card">
+          <span class="ico">🏫</span>
+          <h3>Censo Escolar</h3>
+          <p>Matrículas, número de escolas, docentes e infraestrutura das redes públicas.</p>
+        </div>
+        <div class="card">
+          <span class="ico">💰</span>
+          <h3>Financiamento</h3>
+          <p>Repasses do FNDE, FUNDEB, merenda e transporte escolar.</p>
+        </div>
+        <div class="card">
+          <span class="ico">🗺️</span>
+          <h3>Cobertura nacional</h3>
+          <p>Todos os 5.570 municípios e 27 unidades federativas, via códigos oficiais do IBGE.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="fontes">
+    <div class="container">
+      <h2>Fontes oficiais</h2>
+      <p class="sub">O agente conecta-se a APIs públicas e oficiais — IBGE (cadastro, demografia e indicadores SIDRA) e dados.gov.br — e lê os dados oficiais diretamente, sempre citando a origem. Pelo SIDRA obtém indicadores como taxa de alfabetização e nível de instrução por município; pelo dados.gov.br acessa as bases do INEP, do FNDE e das redes estaduais e municipais.</p>
+      <div class="fontes-list">
+        <span class="pill">IBGE</span>
+        <span class="pill">dados.gov.br</span>
+        <span class="pill">INEP (via dados.gov.br)</span>
+        <span class="pill">FNDE (via dados.gov.br)</span>
+        <span class="pill">Censo Escolar</span>
+        <span class="pill">IDEB</span>
+      </div>
+      <p class="sub" style="margin-top:18px;">Como apoio de <b>contexto</b> (fontes secundárias, não oficiais), o agente também consulta a <b>Wikipédia</b> (API oficial) e lê páginas HTML relevantes — sempre deixando claro que não são fontes oficiais e priorizando os números do IBGE e do dados.gov.br.</p>
+      <div class="fontes-list" style="margin-top:10px;">
+        <span class="pill" style="color:#5b6473;">Wikipédia (contexto)</span>
+        <span class="pill" style="color:#5b6473;">Páginas HTML (contexto)</span>
+      </div>
+
+      <h2 style="margin-top:56px;">Exemplos de perguntas</h2>
+      <ul class="exemplos" style="margin-top:8px; list-style:none;">
+        <li>▸ <b>Compare a taxa de alfabetização de Fortaleza e Recife (Censo IBGE).</b></li>
+        <li>▸ <b>Quais bases oficiais de IDEB existem no dados.gov.br?</b></li>
+        <li>▸ <b>Encontre os dados de matrículas do Censo Escolar e mostre os campos do arquivo.</b></li>
+        <li>▸ <b>Qual a população estimada de Recife e de Salvador (IBGE)?</b></li>
+      </ul>
+
+      <div class="aviso">
+        ⚠️ Este agente consulta dados públicos e indica as fontes. Para decisões oficiais,
+        confirme sempre os números nos portais do INEP/IBGE. Ele não inventa dados — quando
+        algo não está disponível, ele diz onde buscar.
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container">
+      <p>Agente de Educação Pública · construído sobre dados abertos brasileiros.</p>
+      <p style="margin-top:8px;"><a href="/app">Abrir o agente</a></p>
+    </div>
+  </footer>
+</body>
+</html>
