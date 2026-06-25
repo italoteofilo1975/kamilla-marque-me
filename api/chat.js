@@ -1,10 +1,9 @@
 // Backend do agente conversacional de dados públicos de educação.
 //
-// Recebe o histórico da conversa, roda Claude em um loop agêntico com:
-//   - ferramentas de servidor da Anthropic (web_search / web_fetch) para
-//     cobertura nacional ampla a partir de fontes oficiais; e
-//   - ferramentas customizadas (IBGE, dados.gov.br, QEdu) para dados
-//     estruturados confiáveis.
+// Recebe o histórico da conversa e roda Claude em um loop agêntico usando
+// SOMENTE ferramentas que conectam a APIs públicas e oficiais (IBGE e
+// dados.gov.br) e que leem os dados oficiais diretamente. Sem busca web
+// genérica e sem fontes que exijam autenticação.
 // Retorna o texto final do assistente.
 
 import Anthropic from '@anthropic-ai/sdk';
@@ -15,36 +14,22 @@ const MAX_LOOPS = 8;
 
 const SYSTEM_PROMPT = `Você é o "Agente de Educação Pública", um assistente de IA especializado em dados públicos de educação das redes municipais e estaduais brasileiras.
 
-Seu objetivo é responder perguntas sobre educação pública (IDEB, Censo Escolar, matrículas, número de escolas e docentes, IDEB, FUNDEB, repasses do FNDE, ENEM, SAEB etc.) usando dados abertos e oficiais, para qualquer município ou estado do Brasil.
+Você responde a partir EXCLUSIVAMENTE de duas APIs públicas e oficiais, sem autenticação, que você consulta pelas ferramentas disponíveis:
+- IBGE (servicodados.ibge.gov.br): códigos oficiais de municípios/estados e demografia.
+- dados.gov.br (catálogo de dados abertos do governo): hospeda as bases oficiais do INEP (Censo Escolar, IDEB), do FNDE e das redes estaduais/municipais, com os arquivos (CSV/JSON) para leitura.
 
-Fontes que você pode usar:
-- INEP (Censo Escolar, IDEB, SAEB, ENEM) — fonte primária de indicadores educacionais.
-- IBGE — códigos de municípios/estados e dados demográficos de contexto.
-- dados.gov.br — catálogo de dados abertos do governo federal.
-- FNDE — repasses, merenda, transporte escolar.
-- QEdu — camada amigável sobre os dados do INEP.
-
-Ferramentas:
-- resolver_localidade: SEMPRE use primeiro para obter o código IBGE de um município/estado antes de consultar dados que dependem dele.
-- dados_demograficos: contexto populacional (IBGE).
-- buscar_dados_abertos: descobrir bases no dados.gov.br.
-- indicadores_educacionais: IDEB/Censo via QEdu (quando configurado).
-- web_search / web_fetch: busque e leia fontes oficiais (gov.br/inep, qedu.org.br, fnde.gov.br) para obter números específicos, especialmente IDEB e Censo Escolar.
+Fluxo de trabalho:
+1. Use resolver_localidade para obter o código IBGE do município/estado quando necessário.
+2. Use buscar_dados_abertos para localizar a base oficial relevante no dados.gov.br.
+3. Use ler_recurso na URL de um recurso (CSV/JSON) para LER o dado oficial e extrair os números.
+4. Use dados_demograficos para contexto populacional (IBGE).
 
 Diretrizes:
-- SEMPRE cite a fonte e o ANO de referência de cada número (ex.: "IDEB 2023, fonte INEP").
-- Se um município tiver homônimos, peça a UF para desambiguar.
-- Seja honesto quando um dado não estiver disponível ou estiver desatualizado; nunca invente números. Se não tiver certeza, diga onde o usuário pode obter o dado.
-- Formate números no padrão brasileiro (ex.: 1.234.567) e responda sempre em português do Brasil.
-- Seja claro e direto; use tabelas quando comparar municípios/anos.`;
-
-function getServerTools() {
-  // web_search/web_fetch com filtragem dinâmica (modelos Opus 4.6+/Sonnet 4.6).
-  return [
-    { type: 'web_search_20260209', name: 'web_search', max_uses: 6 },
-    { type: 'web_fetch_20260209', name: 'web_fetch', max_uses: 5 },
-  ];
-}
+- Trabalhe apenas com o que essas APIs retornam. NÃO invente números nem use conhecimento prévio para preencher dados — se o número não veio de uma ferramenta, não afirme que é oficial.
+- SEMPRE cite a fonte (órgão/base) e o ANO de referência de cada número.
+- Quando o dado exigir um arquivo grande de microdados ou não estiver no catálogo, seja honesto: explique isso e forneça o link do conjunto/recurso oficial que você encontrou para o usuário baixar.
+- Para municípios homônimos, peça a UF para desambiguar.
+- Formate números no padrão brasileiro (ex.: 1.234.567) e responda sempre em português do Brasil. Use tabelas ao comparar municípios/anos.`;
 
 /** Normaliza o histórico vindo do cliente para o formato da API. */
 function normalizarMensagens(messages) {
@@ -52,7 +37,7 @@ function normalizarMensagens(messages) {
   return messages
     .filter((m) => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string')
     .map((m) => ({ role: m.role, content: m.content }))
-    .slice(-20); // limita o histórico para controlar custo/contexto
+    .slice(-20);
 }
 
 export default async function handler(req, res) {
@@ -61,9 +46,7 @@ export default async function handler(req, res) {
     return;
   }
   if (!process.env.ANTHROPIC_API_KEY) {
-    res.status(500).json({
-      erro: 'Servidor não configurado: defina a variável de ambiente ANTHROPIC_API_KEY.',
-    });
+    res.status(500).json({ erro: 'Servidor não configurado: defina a variável de ambiente ANTHROPIC_API_KEY.' });
     return;
   }
 
@@ -75,40 +58,25 @@ export default async function handler(req, res) {
   }
 
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-  const tools = [...getServerTools(), ...customTools];
   const ferramentasUsadas = [];
 
-  try {
-    let resposta = await client.messages.create({
+  const pedido = () =>
+    client.messages.create({
       model: MODEL,
       max_tokens: 4096,
       thinking: { type: 'adaptive' },
       system: SYSTEM_PROMPT,
-      tools,
+      tools: customTools,
       messages: mensagens,
     });
 
+  try {
+    let resposta = await pedido();
+
     let loops = 0;
-    while (loops < MAX_LOOPS) {
+    while (loops < MAX_LOOPS && resposta.stop_reason === 'tool_use') {
       loops++;
 
-      // Ferramentas de servidor (web_search/web_fetch) atingiram o limite interno.
-      if (resposta.stop_reason === 'pause_turn') {
-        mensagens.push({ role: 'assistant', content: resposta.content });
-        resposta = await client.messages.create({
-          model: MODEL,
-          max_tokens: 4096,
-          thinking: { type: 'adaptive' },
-          system: SYSTEM_PROMPT,
-          tools,
-          messages: mensagens,
-        });
-        continue;
-      }
-
-      if (resposta.stop_reason !== 'tool_use') break;
-
-      // Executa as ferramentas customizadas solicitadas.
       const chamadas = resposta.content.filter((b) => b.type === 'tool_use');
       const resultados = [];
       for (const chamada of chamadas) {
@@ -124,14 +92,7 @@ export default async function handler(req, res) {
       mensagens.push({ role: 'assistant', content: resposta.content });
       mensagens.push({ role: 'user', content: resultados });
 
-      resposta = await client.messages.create({
-        model: MODEL,
-        max_tokens: 4096,
-        thinking: { type: 'adaptive' },
-        system: SYSTEM_PROMPT,
-        tools,
-        messages: mensagens,
-      });
+      resposta = await pedido();
     }
 
     const texto = resposta.content
